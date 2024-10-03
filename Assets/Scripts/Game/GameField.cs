@@ -11,14 +11,25 @@ public class GameField
     
     public float limitX, upperY, radius = 0.5f, offset = 0.1f;
 
-    public int Columns
+    public int EvenColumns
     {
         get
         {
             float diameter = (radius) * 2f + offset;
-            return (int)Math.Round(limitX * 2 / diameter);
+            return (int)Math.Ceiling((limitX * 2 - diameter) / diameter);
         }
     }
+    
+    public int OddColumns
+    {
+        get
+        {
+            float diameter = (radius) * 2f + offset;
+            return (int)Math.Ceiling((limitX * 2 - diameter - radius) / diameter);
+        }
+    }
+
+    private int _cachedEvenColumns, _cachedOddColumns;
 
     private static Vector2Int[] NeighboursPositionsOddRow =
     {
@@ -43,6 +54,14 @@ public class GameField
         this.upperY = upperY;
         this.radius = radius;
         this.offset = offset;
+
+        RecalculateColumns();
+    }
+
+    private void RecalculateColumns()
+    {
+        _cachedEvenColumns = EvenColumns;
+        _cachedOddColumns = OddColumns;
     }
 
     public List<Vector2> GenerateField()
@@ -52,14 +71,17 @@ public class GameField
 
         List<Vector2> positions = new ();
         float diameter = radius * 2f;
-
-        bool isEvenRow = true;
-        for (float y = upperY; y >= 0; y -= diameter + offset)
+        float diameterOffset = diameter + offset;
+        // first row is 0, so it's even
+        bool isEvenRow = false;
+        for (float y = upperY - radius; y >= radius; y -= diameterOffset)
         {
             isEvenRow = !isEvenRow;
-            for (float x = -limitX; x <= limitX - radius; x += diameter + offset)
+            for (float x = -limitX + radius; x <= limitX - radius; x += diameterOffset)
             {
-                var xOffset = isEvenRow ? radius : 0;
+                var xOffset = isEvenRow ? 0 : radius;
+                if (!isEvenRow && x + xOffset > limitX - radius) continue;
+                
                 positions.Add(new Vector3(x + xOffset, y, 0));
             }
         }
@@ -72,20 +94,6 @@ public class GameField
         if (BallDict.TryGetValue(coord, out var result)) return result;
         return null;
     }
-    
-    public Vector2Int GetCoordByGlobalPos(Vector2 globalPos)
-    {
-        var upperLeftCorner = new Vector2(-limitX, upperY);
-        var relativePos = globalPos - upperLeftCorner;
-        float diameterOffset = radius * 2f + offset;
-        int y = Mathf.RoundToInt(relativePos.y / diameterOffset);
-        bool isEvenRow = y % 2 == 0;
-        float xOffset = !isEvenRow ? radius : 0;
-        var t = relativePos.x / diameterOffset;
-        int x = isEvenRow ? Mathf.RoundToInt(t) : Mathf.FloorToInt(t);
-        Debug.Log($"{x} {t}");
-        return new Vector2Int(x, y); 
-    }
     public bool GetBallPositionByGlobalPos(Vector2 globalPos, out Vector2 resultPos)
     {
         var i = GetCoordByGlobalPos(globalPos);
@@ -93,10 +101,23 @@ public class GameField
         return GetBallPositionByCoord(i, out resultPos);
 
     }
-
+    
+    public Vector2Int GetCoordByGlobalPos(Vector2 globalPos)
+    {
+        var upperLeftCorner = new Vector2(-limitX + radius, upperY - radius);
+        var relativePos = globalPos - upperLeftCorner;
+        float diameterOffset = radius * 2f + offset;
+        int y = Mathf.RoundToInt(relativePos.y / diameterOffset);
+        if (y % 2 != 0) relativePos.x -= radius;
+        var t = relativePos.x / diameterOffset;
+        int x =  Mathf.RoundToInt(t);
+        Debug.Log($"{x} {t}");
+        return new Vector2Int(x, y); 
+    }
+    
     public bool GetBallPositionByCoord(Vector2 coord, out Vector2 resultPos)
     {
-        var upperLeftCorner = new Vector2(-limitX, upperY);
+        var upperLeftCorner = new Vector2(-limitX + radius, upperY - radius);
         float diameterOffset = radius * 2f + offset;
         bool isEvenRow = coord.y % 2 == 0;
         float xOffset = !isEvenRow ? radius : 0;
@@ -108,7 +129,11 @@ public class GameField
     }
 
     private bool IsValidCoord(Vector2 coord) => IsValidCoord(Vector2Int.RoundToInt(coord));
-    private bool IsValidCoord(Vector2Int coord) => !(coord.y > 0 || coord.x < 0 || coord.x >= Columns);
+    private bool IsValidCoord(Vector2Int coord)
+    {
+        var columns = coord.y % 2 == 0 ? _cachedEvenColumns : _cachedOddColumns;
+        return !(coord.y > 0 || coord.x < 0 || coord.x >= columns);
+    }
 
     public void TriggerChainReactionFor(Vector2Int coord)
     {

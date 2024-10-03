@@ -748,13 +748,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ballPrefab: {fileID: 1692411939618882699, guid: 7fc9e5f43e07f404bb08fc81d76408a6, type: 3}
   playerSpawnPos: {x: 0, y: -4}
-  limitX: 2.6
-  upperY: 4.4
+  limitX: 2.8
+  upperY: 5
   lowerY: 0
   offset: 0.01
-  radius: 0.2
+  radius: 0.39
   rows: 0
-  columns: 13
+  OddColumns: 6
+  EvenColumns: 7
 --- !u!1 &1726059215
 GameObject:
   m_ObjectHideFlags: 0

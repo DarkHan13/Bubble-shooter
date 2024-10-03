@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
@@ -13,7 +14,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Vector2 playerSpawnPos = new Vector2(0, -4f);
     [SerializeField] private float limitX, upperY, lowerY, offset = 0.1f;
     [SerializeField, Range(0.1f, 1f)] float radius = 0.5f;
-    [SerializeField] private int rows, columns;
+    public int OddColumns, EvenColumns;
 
     public GameField Field { get; private set; }
 
@@ -35,7 +36,8 @@ public class GameManager : MonoBehaviour
     private void OnValidate()
     {
         Field = new GameField(limitX, upperY, radius, offset);
-        columns = Field.Columns;
+        EvenColumns = Field.EvenColumns;
+        OddColumns = Field.OddColumns;
     }
     private void Start()
     {
@@ -113,7 +115,8 @@ public class GameManager : MonoBehaviour
         Gizmos.DrawLine(new Vector2(-10, lowerY), new Vector2(10, lowerY));
 
         var positions = Field.GenerateField();
-        columns = Field.Columns;
+        EvenColumns = Field.EvenColumns;
+        OddColumns = Field.OddColumns;
         if (positions == null) return;
         foreach (var position in positions)
         {
