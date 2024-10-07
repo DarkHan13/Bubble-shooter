@@ -1,21 +1,39 @@
-﻿using UnityEngine;
+﻿using Game;
+using UnityEngine;
 
-namespace Ball
+namespace Ball.State
 {
     public class BallStationaryState : BallState
     {
-        public Vector2 Coord { get; private set; }
+        public Vector2Int Coord { get; private set; }
+        public bool IsFixed;
+        private BallPhysics _physics;
         
         public BallStationaryState(BallStateMachine stateMachine) : base(stateMachine)
         {
-            Coord = GameField.I.GetCoordByGlobalPos(stateMachine.transform.position);
-            GameField.I.BallDict.TryAdd(Coord, stateMachine);
+            _physics = stateMachine.Physics;
         }
 
         public override void Enter()
         {
-            StateMachine.Physics.SetVelocity(Vector2.zero);
-            StateMachine.Physics.enabled = false;
+            var context = StateMachine.Context;
+            StateMachine.Physics.enabled = true;
+            _physics.ClearAdditions();
+            _physics.collisionSimulation = true;
+
+            Coord = GameField.I.GetValidCoordByGlobalPos(context.TargetPosition);
+            StateMachine.gameObject.name = $"Ball {Coord.x} {Coord.y}";
+
+            var position = GameField.I.GetBallPositionByCoord(Coord);
+            _physics.AddSpringJoint(position, 1000f, 0.5f);
+            
+            if (StateMachine.Context.InstantMove)
+            {
+                StateMachine.transform.position = position;
+            }
+            
+            GameField.I.BallDict[Coord] = StateMachine;
+
         }
 
         public override void Exit()

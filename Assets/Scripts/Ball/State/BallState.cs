@@ -1,4 +1,4 @@
-﻿namespace Ball
+﻿namespace Ball.State
 {
     public class BallState
     {

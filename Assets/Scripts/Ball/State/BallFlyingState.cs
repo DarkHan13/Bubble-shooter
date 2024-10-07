@@ -2,6 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Ball;
+using Ball.State;
+using DMath;
+using Game;
 using UnityEngine;
 
 public class BallFlyingState : BallState
@@ -17,20 +20,53 @@ public class BallFlyingState : BallState
 
     public override void Enter()
     {
+        _physics.gravitySimulation = true;
+        _physics.enabled = true;
+        _physics.SetVelocity(StateMachine.Context.Velocity);
+        _physics.AddGravity();
     }
 
     public override void Update()
     {
-        // var coord = GameField.I.GetCoordByGlobalPos(_physics.transform.position);
-        // if (GameField.I.GetBallByCoord(coord) == null && 
-        //     GameField.I.GetBallPositionByCoord(coord, out var position))
-        // {
-        //     _lastValidPosition = position;
-        // }
+        Vector2 position = _physics.transform.position;
+
+        if (position.y < GameField.I.lowerY)
+        {
+            StateMachine.SetState(BallStateEnum.Popped);
+        }
+        if (CheckCollisionWithBalls())
+        {
+            SetStaticState(_lastValidPosition);
+        }
+        else
+        {
+            var yLine = GameField.I.upperY - GameField.I.radius;
+            var predictPosition = position + _physics.GetVelocity() * Time.fixedDeltaTime;
+            if (predictPosition.y >= yLine)
+            {
+                var upperLine = new Line(new Vector2(-100, yLine), new Vector2(100, yLine));
+                var intersection = _physics.GetIntersectionWithLine(position, _physics.GetVelocity(), upperLine);
+                if (intersection != position)
+                {
+                    SetStaticState(intersection);
+                }
+            }
+        }
+    }
+
+    private void SetStaticState(Vector2 position)
+    {
+        StateMachine.Context.TargetPosition = position;
+        StateMachine.Context.InstantMove = false;
+        StateMachine.SetState(BallStateEnum.Static);
+        GameField.I.TriggerChainReactionFor(GameField.I.GetCoordByGlobalPos(position));
+    }
+
+    private bool CheckCollisionWithBalls()
+    {
         _collisions = _physics.CheckCollisions();
         
-        Debug.Log(_collisions.Count);
-        if (_collisions.Count == 0) return;
+        if (_collisions.Count == 0) return false;
         _physics.enabled = false;
         HashSet<Vector2Int> neighboursCoords = new ();
         bool Filter(Vector2Int nCoord)
@@ -49,29 +85,23 @@ public class BallFlyingState : BallState
         }
 
         _lastValidPosition = _physics.transform.position;
+        Vector2 position = _lastValidPosition;
         float minDistance = Single.PositiveInfinity;
         foreach (var nCoord in neighboursCoords)
         {
-            GameField.I.GetBallPositionByCoord(nCoord, out var neighbourPos);
-            var d = Vector2.Distance(_lastValidPosition, neighbourPos);
+            GameField.I.TryGetBallPositionByCoord(nCoord, out var neighbourPos);
+            var d = Vector2.Distance(position, neighbourPos);
             if (d < minDistance)
             {
                 minDistance = d;
                 _lastValidPosition = neighbourPos;
             }
         }
-        
-        _physics.transform.position = _lastValidPosition;
-        
-        StateMachine.SetState(BallStateMachine.BallStateEnum.Static);
-        GameField.I.TriggerChainReactionFor(GameField.I.GetCoordByGlobalPos(_lastValidPosition));
+
+        return true;
     }
 
-    public void OnDrawGizmos()
-    {
-        Gizmos.color = Color.blue;
-        Gizmos.DrawSphere(_lastValidPosition, 0.1f);
-    }
+
     
     
 }

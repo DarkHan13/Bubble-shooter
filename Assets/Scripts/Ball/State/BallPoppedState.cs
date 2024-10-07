@@ -1,10 +1,11 @@
 ﻿using UnityEngine;
 
-namespace Ball
+namespace Ball.State
 {
     public class BallPoppedState : BallState
     {
-        private float popTimer, popDuration = 0.5f;
+        private float _popTimer;
+        private readonly float popDuration = 0.5f;
         private bool _isPopping;
         private Vector3 _originalScale;
         
@@ -15,7 +16,8 @@ namespace Ball
 
         public override void Enter()
         {
-            StateMachine.Physics.enabled = false;
+            // StateMachine.Physics.enabled = false;
+            StateMachine.Physics.collisionSimulation = false;
             _isPopping = true;
         }
 
@@ -23,12 +25,12 @@ namespace Ball
         {
             if (_isPopping)
             {
-                popTimer += Time.deltaTime;
+                _popTimer += Time.deltaTime;
 
-                float progress = popTimer / popDuration;
+                float progress = _popTimer / popDuration;
                 StateMachine.transform.localScale = Vector3.Lerp(_originalScale, Vector3.zero, progress);
 
-                if (popTimer >= popDuration)
+                if (_popTimer >= popDuration)
                 {
                     _isPopping = false;
                     GameObject.Destroy(StateMachine.gameObject);

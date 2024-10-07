@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Ball;
+using Ball.State;
 using UnityEngine;
 
 public class BallController : BallState
@@ -17,7 +18,8 @@ public class BallController : BallState
 
     public BallController(BallStateMachine stateMachine, float minSpeed, float maxSpeed, Vector2 draggingRange) : base(stateMachine)
     {
-        _startPoint = StateMachine.transform.position;
+        _startPoint = StateMachine.Context.TargetPosition;
+        StateMachine.transform.position = _startPoint;
         _physics = StateMachine.Physics;
 
         _minSpeed = minSpeed;
@@ -28,6 +30,12 @@ public class BallController : BallState
     public override void Enter()
     {
         _physics.enabled = false;
+        _physics.AddGravity();
+    }
+
+    public override void Exit()
+    {
+        _physics.ClearAdditions();
     }
 
 
@@ -74,12 +82,11 @@ public class BallController : BallState
     
     private void Launch()
     {
-        _physics.enabled = true;
-        _physics.SetVelocity(ResultVelocity());
+        StateMachine.Context.Velocity = ResultVelocity();
         
         _launchDirection = Vector2.zero;
         
-        StateMachine.SetState(BallStateMachine.BallStateEnum.Flying);
+        StateMachine.SetState(BallStateEnum.Flying);
     }
 
     private Vector2 ResultVelocity()
