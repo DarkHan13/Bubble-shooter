@@ -5,7 +5,7 @@ namespace Ball.State
     public class BallPoppedState : BallState
     {
         private float _popTimer;
-        private readonly float popDuration = 0.5f;
+        private float _popDuration = 0.5f;
         private bool _isPopping;
         private Vector3 _originalScale;
         
@@ -27,10 +27,10 @@ namespace Ball.State
             {
                 _popTimer += Time.deltaTime;
 
-                float progress = _popTimer / popDuration;
+                float progress = _popTimer / _popDuration;
                 StateMachine.transform.localScale = Vector3.Lerp(_originalScale, Vector3.zero, progress);
 
-                if (_popTimer >= popDuration)
+                if (_popTimer >= _popDuration)
                 {
                     _isPopping = false;
                     GameObject.Destroy(StateMachine.gameObject);

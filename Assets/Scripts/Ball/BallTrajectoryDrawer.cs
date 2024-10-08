@@ -5,11 +5,12 @@ using UnityEngine;
 
 public class BallTrajectoryDrawer : MonoBehaviour
 {
-    public static BallTrajectoryDrawer I;
+    private static string _defaultBallTrajectoryPathResources = "Ball/DefaultBallTrajectory";
     
     [SerializeField] private LineRenderer trajectoryLine;
     [SerializeField] private Material dashLineMaterial;
     private static readonly int Tiling = Shader.PropertyToID("_Tiling");
+    private static readonly int ColorId = Shader.PropertyToID("_Color");
 
     private void Reset()
     {
@@ -17,9 +18,19 @@ public class BallTrajectoryDrawer : MonoBehaviour
         trajectoryLine.material = dashLineMaterial;
     }
 
-    private void Awake()
+
+    public static BallTrajectoryDrawer CreateTrajectoryLine(BallTrajectoryDrawer prefab = null)
     {
-        I = this;
+        prefab ??= Resources.Load<BallTrajectoryDrawer>(_defaultBallTrajectoryPathResources);
+        if (prefab == null)
+        {
+            Debug.LogError($"No BallTrajectoryDrawer was found in {_defaultBallTrajectoryPathResources}");
+            return null;
+        }
+
+        var drawer = Instantiate(prefab);
+        
+        return drawer;
     }
 
     public void Clear() => trajectoryLine.positionCount = 0;
@@ -37,5 +48,10 @@ public class BallTrajectoryDrawer : MonoBehaviour
         }
 
         trajectoryLine.material.SetFloat(Tiling, length / dashLength);
+    }
+
+    public void SetColor(Color color)
+    {
+        trajectoryLine.material.SetColor(ColorId, color);
     }
 }

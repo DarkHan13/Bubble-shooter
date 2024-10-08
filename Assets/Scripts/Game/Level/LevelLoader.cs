@@ -53,7 +53,7 @@ namespace Game.Level
         {
             LevelData levelData = JsonUtility.FromJson<LevelData>(file.text);
             levelData.name = file.name;
-            Debug.Log($"{levelData.offset} {levelData.radius} {levelData.balls.Length}");
+            Debug.Log($"{file.name}: {levelData.balls.Length} Balls");
             return levelData;
         }
         public static TextAsset[] GetAllFileLevels()

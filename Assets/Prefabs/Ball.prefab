@@ -100,9 +100,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sr: {fileID: 0}
-  minSpeed: 10
-  maxSpeed: 20
-  draggingRange: {x: 0.25, y: 1}
+  minSpeed: 12
+  maxSpeed: 23
+  draggingRange: {x: 0.25, y: 1.2}
 --- !u!114 &5688901466108018649
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -115,7 +115,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88d0a3af1be68a946a127313dcfd8bf0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gravity: {x: 0, y: -9.8}
   collisionSimulation: 1
   gravitySimulation: 1
 --- !u!58 &3803509041924522896

@@ -7,13 +7,13 @@ using DMath;
 using Game;
 using UnityEngine;
 
-public class BallFlyingState : BallState
+public class BallChargedFlyingState : BallState
 {
     private BallPhysics _physics;
     private List<BallPhysics.BallCollisionInfo> _collisions;
     private Vector2 _lastValidPosition;
 
-    public BallFlyingState(BallStateMachine stateMachine) : base(stateMachine)
+    public BallChargedFlyingState(BallStateMachine stateMachine) : base(stateMachine)
     {
         _physics = StateMachine.Physics;
     }
@@ -64,40 +64,20 @@ public class BallFlyingState : BallState
 
     private bool CheckCollisionWithBalls()
     {
-        _collisions = _physics.CheckCollisions(hitBall => hitBall.State is BallStationaryState);
+        _collisions = _physics.CheckCollisions();
         
         if (_collisions.Count == 0) return false;
         _physics.enabled = false;
-        HashSet<Vector2Int> neighboursCoords = new ();
-        bool Filter(Vector2Int nCoord)
-        {
-            var b = GameField.I.GetBallByCoord(nCoord);
-            return b == null;
-        }
-        foreach (var cInfo in _collisions)
-        {
-            var coord = GameField.I.GetCoordByGlobalPos(cInfo.HitBallPhysics.transform.position);
-            var neighboursList = GameField.I.GetNeighbours(coord, Filter);
-            foreach (var i in neighboursList)
-            {
-                neighboursCoords.Add(i);
-            }
-        }
 
-        _lastValidPosition = _physics.transform.position;
-        Vector2 position = _lastValidPosition;
-        float minDistance = Single.PositiveInfinity;
-        foreach (var nCoord in neighboursCoords)
-        {
-            GameField.I.TryGetBallPositionByCoord(nCoord, out var neighbourPos);
-            var d = Vector2.Distance(position, neighbourPos);
-            if (d < minDistance)
-            {
-                minDistance = d;
-                _lastValidPosition = neighbourPos;
-            }
-        }
+        var cInfo = _collisions[0];
+        var collidedBallPos = cInfo.HitBallPhysics.transform.position;
+        var coord = GameField.I.GetCoordByGlobalPos(collidedBallPos);
+        var collidedBall = GameField.I.GetBallByCoord(coord);
 
+        collidedBall.SetState(BallStateEnum.Popped);
+        
+        _lastValidPosition = collidedBallPos;
+        
         return true;
     }
 

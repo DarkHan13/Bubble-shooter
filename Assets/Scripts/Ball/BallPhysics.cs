@@ -106,10 +106,9 @@ namespace Ball
             _additions.Clear();
         }
         
-        public List<Vector2> PredictTrajectory(Vector2 velocity)
+        public List<Vector2> PredictTrajectory(Vector2 velocity, float time = 0.5f)
         {
             List<Vector2> points = new List<Vector2>();
-            float time = 0.5f;
             float deltaTime = 0.02f;
             Vector2 position = transform.position;
 
@@ -140,10 +139,9 @@ namespace Ball
             foreach (var ball in balls)
             {
                 if (ball.Physics == this) continue;
-                if (!condition.Invoke(ball)) continue;
-
                 if (!AreCirclesColliding(this, ball.Physics, out var distance)) continue;
-
+                if (!condition.Invoke(ball)) continue;
+                
                 var collision = new BallCollisionInfo();
                 collision.Distance = distance;
                 collision.HitBallPhysics = ball.Physics;

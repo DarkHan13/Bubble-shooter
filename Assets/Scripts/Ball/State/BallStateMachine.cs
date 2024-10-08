@@ -18,8 +18,9 @@ namespace Ball.State
         public BallType Type { get; private set; }
         public StateContext Context = new ();
 
-        public event Action<BallStateEnum> OnStateChange; 
-        
+        public event Action<BallStateEnum> OnStateChange;
+        public event Action<BallStateMachine> OnMouseDownEvent; 
+
 
         public void Init()
         {
@@ -71,6 +72,9 @@ namespace Ball.State
                 case BallStateEnum.Flying:
                     _state = new BallFlyingState(this);
                     break;
+                case BallStateEnum.ChargedFlying:
+                    _state = new BallChargedFlyingState(this);
+                    break;
                 case BallStateEnum.Static:
                     _state = new BallStationaryState(this);
                     break;
@@ -86,9 +90,10 @@ namespace Ball.State
             _state.Enter();
             OnStateChange?.Invoke(newState);
         }
-
+        
         private void OnMouseDown()
         {
+            OnMouseDownEvent?.Invoke(this);
             _state.OnMouseDown();
         }
 

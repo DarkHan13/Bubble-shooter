@@ -10,6 +10,11 @@ namespace Ball.State
         Moving,
         PlayerBall,
         Flying,
+        ChargedFlying,
+        /// <summary>
+        /// Static State
+        /// <param name="arg(0)">value</param>>
+        /// </summary>
         Static,
         Falling,
         Popped,

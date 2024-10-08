@@ -1,8 +1,12 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using Ball.State;
 using Game.Level;
+using Game.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 namespace Game
@@ -20,11 +24,30 @@ namespace Game
         [Range(0.1f, 1f)] public float radius = 0.5f;
         // Just to see the result in inspector
         public int OddColumns, EvenColumns;
+        
+        [Header("UI")]
+        [SerializeField] private ScoreUI scoreUI;
+        [SerializeField] private CanvasGroupAlphaController gameplayCanvasGroupAlpha;
 
         public GameField Field { get; private set; }
+        
+        private int _currentScore;
+        public int CurrentScore
+        {
+            get => _currentScore;
+            private set
+            {
+                if (_currentScore != value) scoreUI.SetScore(value);
+                _currentScore = value;
+            }
+        }
 
         private BallStateMachine _playerBall;
-        private List<BallStateMachine> _remainingBalls = new ();
+        private List<BallStateMachine> _remainingBalls;
+        private bool _gameIsOver;
+
+        // true - win / false - lost
+        public event Action<bool> OnGameOver; 
 
         private void Awake()
         {
@@ -48,29 +71,37 @@ namespace Game
         {
             // Set 60 fps
             Application.targetFrameRate = 60;
-            
+            LoadLevel(0);
+        }
+
+        public void LoadLevel(LevelData levelData)
+        {
+            _gameIsOver = false;
             var sceneBalls = FindObjectsByType<BallStateMachine>(FindObjectsSortMode.None);
             foreach (var sceneBall in sceneBalls)
             {
                 Destroy(sceneBall.gameObject);
             }
+            Debug.Log(sceneBalls.Length);
+            CurrentScore = 0;
             
-            LevelData levelData = LevelLoader.GetRandomLevel();
             playerSpawnPos = levelData.playerSpawnPos;
             playerBallsData = levelData.playerBallsData;
             radius = levelData.radius;
             offset = levelData.offset;
-            UpdateField();
+            ResetField();
+            // field
             foreach (var ballInfo in levelData.balls)
             {
                 var ball = CreateBall(Field.GetBallPositionByCoord(ballInfo.pos));
                 ball.transform.SetParent(transform);
                 ball.SetType(ballInfo.type);
                 ball.SetState(BallStateEnum.Static);
+                ball.OnStateChange += OnStaticBallStateChanged;
             }
             
-            // CreatePlayerBall();
-
+            // player balls
+            _remainingBalls = new List<BallStateMachine>();
             var remainingBallPos = remainingBallsTmp.transform.position;
             var l = playerBallsData.isRandom ? playerBallsData.ballCount : playerBallsData.balls.Length;
             for (int i = 0; i < l; i++)
@@ -86,6 +117,13 @@ namespace Game
             }
 
             NextPlayerBall();
+            Field.AfterChainReaction += CheckEndGame;
+        }
+
+        public void LoadLevel(int levelIndex)
+        {
+            LevelData levelData = LevelLoader.FileToLevel(LevelLoader.GetAllFileLevels()[levelIndex]);
+            LoadLevel(levelData);
         }
 
 
@@ -125,27 +163,82 @@ namespace Game
             ball.Init();
             return ball;
         }
-        private void CreatePlayerBall()
-        {
-            _playerBall = CreateBall(playerSpawnPos);
-            _playerBall.SetType((BallType)Random.Range(1, 6));
-            _playerBall.SetState(BallStateEnum.PlayerBall);
-            _playerBall.OnStateChange += OnPlayerBallStateChanged;
-        }
+
 
         private void OnPlayerBallStateChanged(BallStateEnum newState)
         {
+            if (newState is BallStateEnum.PlayerBall)
+            {
+                var ballController = (BallController)_playerBall.State;
+                ballController.OnDragging += delegate(bool b)
+                {
+                    gameplayCanvasGroupAlpha.Show(!b);
+                };
+                return;
+            }
             if (newState is not (BallStateEnum.Static or BallStateEnum.Popped)) return;
+            if (newState is BallStateEnum.Static)
+            {
+                _playerBall.OnStateChange += OnStaticBallStateChanged;
+            }
             _playerBall.OnStateChange -= OnPlayerBallStateChanged;
             NextPlayerBall();
+        }
+        
+        private void OnStaticBallStateChanged(BallStateEnum newState)
+        {
+            if (newState is not BallStateEnum.Popped) return;
+            CurrentScore += 20;
+            scoreUI.SetScore(CurrentScore);
+        }
+
+        private void CheckEndGame()
+        {
+            if (_gameIsOver) return;
+            var numberBalls = Field.BallDict.Count;
+            if (numberBalls != 0 && _playerBall != null) return;
+            CurrentScore += _remainingBalls.Count * 50;
+            _gameIsOver = true;
+            StartCoroutine(EndGameCo());
+        }
+
+        IEnumerator EndGameCo()
+        {
+            var balls = Field.BallSet;
+            yield return new WaitForSeconds(0.5f);
+            bool allBallsDestroyed = false;
+            while (!allBallsDestroyed)
+            {
+                allBallsDestroyed = true;
+                foreach (var ball in balls)
+                {
+                    if (ball.State is (BallFallingState))
+                    {
+                        allBallsDestroyed = false;
+                        break;
+                    }
+                }
+                yield return new WaitForSeconds(0.1f);
+            }
+            
+            var numberBalls = Field.BallDict.Count;
+            if (numberBalls > 0)
+            {
+                // Lost
+                OnGameOver?.Invoke(false);
+                yield break;
+            }
+            OnGameOver?.Invoke(true);
+
         }
 
         private void NextPlayerBall()
         {
             if (_remainingBalls.Count == 0)
             {
-                Debug.Log("You lost");
                 remainingBallsTmp.text = ":(";
+                _playerBall = null;
+                CheckEndGame();
                 return;
             }
             _playerBall = _remainingBalls[0];

@@ -14,6 +14,8 @@ namespace Game
     
         public float limitX, upperY, lowerY, radius = 0.5f, offset = 0.1f;
 
+        public event Action AfterChainReaction;
+
         public int EvenColumns
         {
             get
@@ -180,7 +182,11 @@ namespace Game
         public void TriggerChainReactionFor(Vector2Int coord)
         {
             var ball = GetBallByCoord(coord);
-            if (ball == null) return;
+            if (ball == null)
+            {
+                AfterChainReaction?.Invoke();
+                return;
+            }
 
             var targetType = ball.Type;
 
@@ -208,7 +214,11 @@ namespace Game
                 }
             }
         
-            if (targetBalls.Count < 3) return;
+            if (targetBalls.Count < 3)
+            {
+                AfterChainReaction?.Invoke();
+                return;
+            }
 
             foreach (var targetBall in targetBalls)
             {
@@ -234,8 +244,9 @@ namespace Game
             {
                 UpdateStaticBalls();
             }
-            
             TriggerFalling();
+            
+            AfterChainReaction?.Invoke();
         }
 
         public void UpdateStaticBalls()
