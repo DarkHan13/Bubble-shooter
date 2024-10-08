@@ -22,15 +22,15 @@ public class BallController : BallState
     public event Action<bool> OnDragging; 
 
 
-    public BallController(BallStateMachine stateMachine, float minSpeed, float maxSpeed, Vector2 draggingRange) : base(stateMachine)
+    public BallController(BallStateMachine stateMachine) : base(stateMachine)
     {
         _startPoint = StateMachine.Context.TargetPosition;
         StateMachine.transform.position = _startPoint;
         _physics = StateMachine.Physics;
 
-        _minSpeed = minSpeed;
-        _maxSpeed = maxSpeed;
-        _draggingRange = draggingRange;
+        _minSpeed = StateMachine.Context.FloatArgs[0];
+        _maxSpeed = StateMachine.Context.FloatArgs[1];
+        _draggingRange = StateMachine.Context.Vector2Args[0];
     }
 
     public override void Enter()

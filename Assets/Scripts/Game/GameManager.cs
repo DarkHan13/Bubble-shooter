@@ -71,6 +71,8 @@ namespace Game
         {
             // Set 60 fps
             Application.targetFrameRate = 60;
+            CurrentScore = 0;
+
             LoadLevel(0);
         }
 
@@ -82,8 +84,6 @@ namespace Game
             {
                 Destroy(sceneBall.gameObject);
             }
-            Debug.Log(sceneBalls.Length);
-            CurrentScore = 0;
             
             playerSpawnPos = levelData.playerSpawnPos;
             playerBallsData = levelData.playerBallsData;
@@ -225,9 +225,11 @@ namespace Game
             if (numberBalls > 0)
             {
                 // Lost
+                CurrentScore = Math.Max(0, CurrentScore - 100);
                 OnGameOver?.Invoke(false);
                 yield break;
             }
+
             OnGameOver?.Invoke(true);
 
         }
@@ -244,8 +246,11 @@ namespace Game
             _playerBall = _remainingBalls[0];
             _remainingBalls.RemoveAt(0);
             _playerBall.Context.NextState = BallStateEnum.PlayerBall;
+            _playerBall.Context.FloatArgs = new[] { 0.5f };
             _playerBall.Context.TargetPosition = playerSpawnPos;
             _playerBall.SetState(BallStateEnum.Moving);
+            _playerBall.Context.FloatArgs = new[] { _playerBall.minSpeed, _playerBall.maxSpeed };
+            _playerBall.Context.Vector2Args = new[] { _playerBall.draggingRange };
             _playerBall.OnStateChange += OnPlayerBallStateChanged;
             
             remainingBallsTmp.text = _remainingBalls.Count.ToString();

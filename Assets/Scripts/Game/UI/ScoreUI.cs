@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Text;
 using TMPro;
 using UnityEngine;
 
@@ -23,8 +24,11 @@ namespace Game.UI
             _timer = 0;
             _isAnimating = true;
             _plusScore = score - _currentScore;
-            var sign = _plusScore >= 0 ? '+' : '-';
-            tmp.text = $"Score: {score}{sign}{_plusScore}";
+            StringBuilder sb = new StringBuilder();
+            sb.Append($"Score: {score}");
+            if (_plusScore >= 0) sb.Append('+');
+            sb.Append(_plusScore.ToString());
+            tmp.text = sb.ToString();
         }
 
         private void Update()

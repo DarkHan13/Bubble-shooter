@@ -9,12 +9,12 @@ namespace Ball.State
         private readonly float _moveDuration = 0.5f;
         private Vector3 _originalPosition, _targetPosition;
 
-        public BallMovingState(BallStateMachine stateMachine, float moveDuration) : base(stateMachine)
+        public BallMovingState(BallStateMachine stateMachine) : base(stateMachine)
         {
-            _moveDuration = moveDuration;
+            _targetPosition = stateMachine.Context.TargetPosition;
+            _moveDuration = stateMachine.Context.FloatArgs[0];
             _physics = stateMachine.Physics;
             _originalPosition = stateMachine.transform.position;
-            _targetPosition = stateMachine.Context.TargetPosition;
             StateMachine.gameObject.name = "Moving";
         }
 

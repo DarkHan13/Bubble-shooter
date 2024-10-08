@@ -8,11 +8,11 @@ namespace Ball.State
     {
 
         [SerializeField] private SpriteRenderer sr;
-        [SerializeField] private float minSpeed = 15f, maxSpeed = 25f;
-        [SerializeField] private Vector2 draggingRange = new Vector2(0.25f, 1f);
+        [SerializeField] public float minSpeed = 15f, maxSpeed = 25f;
+        [SerializeField] public Vector2 draggingRange = new (0.25f, 1f);
 
         public BallPhysics Physics { get; private set; }
-        private BallState _state = new BallState(null);
+        private BallState _state = new (null);
         public BallState State => _state;
         private Camera _mainCamera;
         public BallType Type { get; private set; }
@@ -58,35 +58,20 @@ namespace Ball.State
         public void SetState(BallStateEnum newState)
         {
             _state.Exit();
-            switch (newState)
-            {
-                case BallStateEnum.Waiting:
-                    _state = new BallWaitingState(this);
-                    break;
-                case BallStateEnum.Moving:
-                    _state = new BallMovingState(this, 0.5f);
-                    break;
-                case BallStateEnum.PlayerBall:
-                    _state = new BallController(this, minSpeed, maxSpeed, draggingRange);
-                    break;
-                case BallStateEnum.Flying:
-                    _state = new BallFlyingState(this);
-                    break;
-                case BallStateEnum.ChargedFlying:
-                    _state = new BallChargedFlyingState(this);
-                    break;
-                case BallStateEnum.Static:
-                    _state = new BallStationaryState(this);
-                    break;
-                case BallStateEnum.Falling:
-                    _state = new BallFallingState(this);
-                    break;
-                case BallStateEnum.Popped:
-                    _state = new BallPoppedState(this);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(newState), newState, null);
-            }
+            // _state = newState switch
+            // {
+            //     BallStateEnum.Waiting => new BallWaitingState(this),
+            //     BallStateEnum.Moving => new BallMovingState(this),
+            //     BallStateEnum.PlayerBall => new BallController(this),
+            //     BallStateEnum.Flying => new BallFlyingState(this),
+            //     BallStateEnum.ChargedFlying => new BallChargedFlyingState(this),
+            //     BallStateEnum.Static => new BallStationaryState(this),
+            //     BallStateEnum.Falling => new BallFallingState(this),
+            //     BallStateEnum.Popped => new BallPoppedState(this),
+            //     _ => _state
+            // };
+
+            _state = newState.CreateState(this);
             _state.Enter();
             OnStateChange?.Invoke(newState);
         }
@@ -108,7 +93,11 @@ namespace Ball.State
         public Vector2 TargetPosition;
         public bool InstantMove = true;
         public Vector2 Velocity;
-        public BallStateEnum NextState;
+        public BallStateEnum NextState = BallStateEnum.Waiting;
+
+        public int[] IntArgs = Array.Empty<int>();
+        public float[] FloatArgs = Array.Empty<float>();
+        public Vector2[] Vector2Args = Array.Empty<Vector2>();
     }
 }
 
